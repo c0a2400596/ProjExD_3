@@ -226,7 +226,7 @@ def main():
                 
         screen.blit(bg_img, [0, 0])
         
-        # 1. コウカトンを移動・描画する
+        # 1. こうかとんを移動・描画する
         key_lst = pg.key.get_pressed()
         bird.update(key_lst, screen)
         
