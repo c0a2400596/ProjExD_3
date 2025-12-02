@@ -3,6 +3,7 @@ import random
 import sys
 import time
 import pygame as pg
+import math 
 
 
 WIDTH = 1100    # ゲームウィンドウの幅
@@ -36,7 +37,7 @@ class Bird:
         pg.K_RIGHT: (+5, 0),
     }
     img0 = pg.transform.rotozoom(pg.image.load("fig/3.png"), 0, 0.9)
-    img = pg.transform.flip(img0, True, False)  # デフォルトのこうかとん（右向き）
+    img = pg.transform.flip(img0, True, False)  
     imgs = {    # 0度から反時計回りに定義
         (+5, 0): img,  # 右
         (+5, -5): pg.transform.rotozoom(img, 45, 0.9),  # 右上
@@ -56,6 +57,7 @@ class Bird:
         self.img = __class__.imgs[(+5, 0)]
         self.rct: pg.Rect = self.img.get_rect()
         self.rct.center = xy
+        self.direction = (+5, 0) # 初期方向（右）
 
     def change_img(self, num: int, screen: pg.Surface):
         """
@@ -82,30 +84,34 @@ class Bird:
             self.rct.move_ip(-sum_mv[0], -sum_mv[1])
         if not (sum_mv[0] == 0 and sum_mv[1] == 0):
             self.img = __class__.imgs[tuple(sum_mv)]
+            self.direction = tuple(sum_mv) 
         screen.blit(self.img, self.rct)
 
 
 class Beam:
     """
     こうかとんが放つビームに関するクラス
-    """
+    """   
     def __init__(self, bird:"Bird"):
         """
         ビーム画像Surfaceを生成する
         引数 bird：ビームを放つこうかとん（Birdインスタンス）
         """
-        self.img = pg.image.load(f"fig/beam.png")  # Surface
-        self.rct = self.img.get_rect()  # Rect
-        self.rct.centery = bird.rct.centery  # ビームの中心縦座標 = こうかとんの中心縦座標
-        self.rct.left = bird.rct.right  # ビームの左座標 = こうかとんの右座標
-        self.vx, self.vy = +5, 0
+        self.vx, self.vy = bird.direction       
+        rad = math.atan2(-self.vy, self.vx) 
+        angle = math.degrees(rad) # 度数法に変換
+        
+        img = pg.image.load(f"fig/beam.png") 
+        self.img = pg.transform.rotozoom(img, angle, 1.0)        
+        self.rct = self.img.get_rect()       
+        self.rct.centerx = bird.rct.centerx + bird.rct.width * self.vx / 5
+        self.rct.centery = bird.rct.centery + bird.rct.height * self.vy / 5
 
     def update(self, screen: pg.Surface):
         """
         ビームを速度ベクトルself.vx, self.vyに基づき移動させる
         引数 screen：画面Surface
         """
-        # main関数で画面外判定を行うため、ここでは移動と描画のみを行う
         self.rct.move_ip(self.vx, self.vy)
         screen.blit(self.img, self.rct)    
 
@@ -143,7 +149,7 @@ class Bomb:
 
 class Explosion:
     """
-    爆発エフェクトに関するクラス (要件を満たすよう修正済み)
+    爆発エフェクトに関するクラス
     """
     def __init__(self, bomb: "Bomb", life: int=40): 
         """
@@ -203,7 +209,7 @@ def main():
     bombs = [Bomb((255, 0, 0), 10) for _ in range(NUM_OF_BOMBS)]    
     
     beams = []  
-    # 爆発リストの初期化 
+    
     explosions = []
     
     score = Score() # スコアインスタンスの生成 
@@ -215,6 +221,7 @@ def main():
             if event.type == pg.QUIT:
                 return
             if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
+                # 向きに応じたビームを生成
                 beams.append(Beam(bird)) 
                 
         screen.blit(bg_img, [0, 0])
@@ -225,8 +232,7 @@ def main():
         
         # 2. 爆弾を移動・描画する
         for bomb in bombs: 
-            bomb.update(screen)
-            
+            bomb.update(screen)            
         for bomb in bombs:
             if bird.rct.colliderect(bomb.rct):
                 # Game Overの文字表示
@@ -256,6 +262,7 @@ def main():
                     bird.change_img(6, screen)
                     pg.display.update()
                     break 
+        
         beams = [beam for i, beam in enumerate(beams) if i not in set(hit_beams)]
         bombs = [bomb for i, bomb in enumerate(bombs) if i not in set(hit_bombs)]
 
@@ -269,7 +276,7 @@ def main():
         for exp in explosions:
             exp.update(screen)
             
-        score.update(screen) # スコアの描画      
+        score.update(screen) # スコアの描画      
         pg.display.update()
         tmr += 1
         clock.tick(50)
