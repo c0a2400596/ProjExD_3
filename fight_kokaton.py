@@ -5,9 +5,9 @@ import time
 import pygame as pg
 
 
-WIDTH = 1100  # ゲームウィンドウの幅
-HEIGHT = 650  # ゲームウィンドウの高さ
-NUM_OF_BOMBS = 5  # 爆弾の数
+WIDTH = 1100    # ゲームウィンドウの幅
+HEIGHT = 650    # ゲームウィンドウの高さ
+NUM_OF_BOMBS = 5    # 爆弾の数
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 
@@ -29,7 +29,7 @@ class Bird:
     """
     ゲームキャラクター（こうかとん）に関するクラス
     """
-    delta = {  # 押下キーと移動量の辞書
+    delta = {    # 押下キーと移動量の辞書
         pg.K_UP: (0, -5),
         pg.K_DOWN: (0, +5),
         pg.K_LEFT: (-5, 0),
@@ -37,7 +37,7 @@ class Bird:
     }
     img0 = pg.transform.rotozoom(pg.image.load("fig/3.png"), 0, 0.9)
     img = pg.transform.flip(img0, True, False)  # デフォルトのこうかとん（右向き）
-    imgs = {  # 0度から反時計回りに定義
+    imgs = {    # 0度から反時計回りに定義
         (+5, 0): img,  # 右
         (+5, -5): pg.transform.rotozoom(img, 45, 0.9),  # 右上
         (0, -5): pg.transform.rotozoom(img, 90, 0.9),  # 上
@@ -85,7 +85,7 @@ class Bird:
         screen.blit(self.img, self.rct)
 
 
-class  Beam:
+class Beam:
     """
     こうかとんが放つビームに関するクラス
     """
@@ -141,18 +141,40 @@ class Bomb:
         screen.blit(self.img, self.rct)
 
 
+class Score:
+    """
+     【ここから追加】スコアを表示するクラス 
+    """
+    def __init__(self, font_size=50, color=(0, 0, 255), position=(100, HEIGHT - 50)):
+        """
+        スコア表示用のフォントと初期値を設定する
+        """
+        self.font = pg.font.Font(None, font_size)  # フォント設定 (None: デフォルトフォント)
+        self.score = 0
+        self.color = color
+        self.rct = pg.Rect(0, 0, 0, 0)
+        self.rct.center = position  # スコア表示位置 (画面左下付近)
+
+    def update(self, screen: pg.Surface):
+        """
+        スコアを画面に表示する
+        引数 screen：画面Surface
+        """
+        # scoreを文字列に変換し、Surfaceを再生成
+        self.img = self.font.render(f"Score: {self.score}", True, self.color)
+        self.rct = self.img.get_rect(center=self.rct.center) # 描画時に位置を再調整
+        screen.blit(self.img, self.rct)
+
+
 def main():
     pg.display.set_caption("たたかえ！こうかとん")
     screen = pg.display.set_mode((WIDTH, HEIGHT))    
     bg_img = pg.image.load("fig/pg_bg.jpg")
     bird = Bird((300, 200))
-    # bomb = Bomb((255, 0, 0), 10)
-    # bombs = []
-    # for _ in range(NUM_OF_BOMBS):
-    #     bomb = Bomb((255, 0, 0), 10)
-    #     bombs.append(bomb)
     bombs = [Bomb((255, 0, 0), 10) for _ in range(NUM_OF_BOMBS)]
-    beam = None  # ゲーム初期化時にはビームは存在しない
+    beam = None  # ゲーム初期化時にはビームは存在しない    
+    #  スコアインスタンスの生成 
+    score = Score()         
     clock = pg.time.Clock()
     tmr = 0
     while True:
@@ -161,7 +183,7 @@ def main():
                 return
             if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
                 # スペースキー押下でBeamクラスのインスタンス生成
-                beam = Beam(bird)            
+                beam = Beam(bird)             
         screen.blit(bg_img, [0, 0])
         
         for b, bomb in enumerate(bombs):
@@ -176,17 +198,22 @@ def main():
                 if beam.rct.colliderect(bomb.rct):
                     # ビームが爆弾に当たったら，爆弾とビームを消す
                     beam = None
-                    bombs[b] = None
+                    bombs[b] = None                    
+                    #  スコア加算 
+                    score.score += 1                     
                     bird.change_img(6, screen)
                     pg.display.update()
         bombs = [bomb for bomb in bombs if bomb  is not None]
-
         key_lst = pg.key.get_pressed()
         bird.update(key_lst, screen)
         if beam is not None:  # ビームが存在していたら
-            beam.update(screen)   
+            beam.update(screen)  
         for bomb in bombs:  # 爆弾が存在していたら
             bomb.update(screen)
+            
+        #  スコアの描画 
+        score.update(screen)
+               
         pg.display.update()
         tmr += 1
         clock.tick(50)
@@ -196,4 +223,4 @@ if __name__ == "__main__":
     pg.init()
     main()
     pg.quit()
-    sys.exit()  
+    sys.exit()
