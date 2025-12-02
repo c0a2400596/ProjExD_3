@@ -149,7 +149,7 @@ class Score:
         """
         スコア表示用のフォントと初期値を設定する
         """
-        self.font = pg.font.Font(None, font_size)  # フォント設定 (None: デフォルトフォント)
+        self.font = pg.font.Font("hgp創英角ﾎﾟｯﾌﾟ体", 30)  # フォント設定 (None: デフォルトフォント)
         self.score = 0
         self.color = color
         self.rct = pg.Rect(0, 0, 0, 0)
@@ -161,7 +161,7 @@ class Score:
         引数 screen：画面Surface
         """
         # scoreを文字列に変換し、Surfaceを再生成
-        self.img = self.font.render(f"Score: {self.score}", True, self.color)
+        self.img = self.fonto.render("表示させる文字列", 0, 色)
         self.rct = self.img.get_rect(center=self.rct.center) # 描画時に位置を再調整
         screen.blit(self.img, self.rct)
 
